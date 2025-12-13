@@ -88,12 +88,39 @@ void setup() {
   Serial.println("\nCommands:");
   Serial.println("  c/C - Calibrate threshold");
   Serial.println("  t/T - Set threshold manually");
-  Serial.println("  s/S - Show status\n");
+  Serial.println("  s/S - Show status");
+  Serial.println("  d/D - Toggle debug mode\n");
+
+  Serial.println("Watching ADC readings on GPIO 36...");
+  Serial.println("Turn potentiometer and watch values change\n");
 }
 
 void loop() {
-  // Read sensor value
-  sensorValue = analogRead(SENSOR_PIN);
+  // Read sensor value multiple times and average (helps with noise)
+  int reading1 = analogRead(SENSOR_PIN);
+  delay(10);
+  int reading2 = analogRead(SENSOR_PIN);
+  delay(10);
+  int reading3 = analogRead(SENSOR_PIN);
+
+  sensorValue = (reading1 + reading2 + reading3) / 3;
+
+  // Debug output every 2 seconds
+  static unsigned long lastDebug = 0;
+  if (millis() - lastDebug > 2000) {
+    Serial.print("RAW ADC: ");
+    Serial.print(reading1);
+    Serial.print(", ");
+    Serial.print(reading2);
+    Serial.print(", ");
+    Serial.print(reading3);
+    Serial.print(" | AVG: ");
+    Serial.print(sensorValue);
+    Serial.print(" | Voltage: ");
+    Serial.print((sensorValue / 4095.0) * 3.3);
+    Serial.println("V");
+    lastDebug = millis();
+  }
 
   // Check for serial commands
   if (Serial.available() > 0) {
