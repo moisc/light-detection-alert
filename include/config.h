@@ -20,7 +20,7 @@
 // 4. Give it a name and select a channel
 // 5. Copy the Webhook URL
 // 6. Paste it below (keep the quotes)
-#define DISCORD_WEBHOOK_URL "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE"
+#define DISCORD_WEBHOOK_URL "https://discord.com/api/webhooks/1449488126631219312/MCicDOREpXB90JH-FNTrfhb9QmarS2XkVtpRTzVapH9ZlpqoxTq9SNviN6JQ4SA0Chkb"
 
 // Alternative: Telegram Bot (uncomment if using Telegram instead)
 // To create a Telegram bot:
