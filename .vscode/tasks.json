@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Arduino: Compile",
+      "type": "shell",
+      "command": "arduino-cli compile --fqbn <FQBN_PLACEHOLDER> ${workspaceFolder}",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Arduino: Upload",
+      "type": "shell",
+      "command": "arduino-cli upload -p <PORT_PLACEHOLDER> --fqbn <FQBN_PLACEHOLDER> ${workspaceFolder}",
+      "group": "none",
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}

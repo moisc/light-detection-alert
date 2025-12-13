@@ -1,0 +1,5 @@
+# Libraries required (install via Arduino Library Manager or arduino-cli)
+# Example: arduino-cli lib install "LoRa"
+
+LoRa
+# SPI is included in the core for ESP32
