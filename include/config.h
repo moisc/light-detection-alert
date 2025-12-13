@@ -9,8 +9,8 @@
 #define CONFIG_H
 
 // WiFi Configuration
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID "HAMOSHAVA"
+#define WIFI_PASSWORD "saloniki"
 
 // Discord Webhook URL
 // To create a Discord webhook:

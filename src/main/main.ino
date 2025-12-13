@@ -20,7 +20,8 @@
  */
 
 #include <Wire.h>
-#include <U8g2lib.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "config.h"
@@ -30,9 +31,11 @@
 #define OLED_SDA 4          // Heltec LoRa32 v2 OLED SDA
 #define OLED_SCL 15         // Heltec LoRa32 v2 OLED SCL
 #define OLED_RST 16         // Heltec LoRa32 v2 OLED Reset
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
 // OLED Display setup
-U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, OLED_SCL, OLED_SDA, OLED_RST);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
 // Sensor and threshold settings
 int sensorValue = 0;
@@ -59,12 +62,18 @@ void setup() {
   Serial.println("=================================\n");
 
   // Initialize OLED
-  u8g2.begin();
-  u8g2.clearBuffer();
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-  u8g2.drawStr(0, 15, "Light Detector");
-  u8g2.drawStr(0, 30, "Initializing...");
-  u8g2.sendBuffer();
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("SSD1306 allocation failed");
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 10);
+  display.println("Light Detector");
+  display.setCursor(0, 25);
+  display.println("Initializing...");
+  display.display();
 
   // Setup ADC for sensor reading
   analogReadResolution(12);  // 12-bit resolution (0-4095)
@@ -185,52 +194,55 @@ void sendDiscordNotification() {
 }
 
 void displayStatus() {
-  u8g2.clearBuffer();
+  display.clearDisplay();
 
   // Title
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-  u8g2.drawStr(0, 10, "Light Detector");
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("Light Detector");
 
   // WiFi status
-  u8g2.setFont(u8g2_font_6x10_tr);
   if (wifiConnected && WiFi.status() == WL_CONNECTED) {
-    u8g2.drawStr(100, 10, "WiFi");
+    display.setCursor(90, 0);
+    display.print("WiFi");
   } else {
-    u8g2.drawStr(95, 10, "NoWiFi");
+    display.setCursor(85, 0);
+    display.print("NoWiFi");
   }
 
   // Draw separator line
-  u8g2.drawLine(0, 12, 128, 12);
+  display.drawLine(0, 10, 128, 10, SSD1306_WHITE);
 
   // Sensor value
-  u8g2.setFont(u8g2_font_ncenB08_tr);
-  u8g2.drawStr(0, 25, "Reading:");
-  char valueStr[10];
-  sprintf(valueStr, "%d", sensorValue);
-  u8g2.drawStr(60, 25, valueStr);
+  display.setCursor(0, 15);
+  display.print("Reading:");
+  display.setCursor(60, 15);
+  display.print(sensorValue);
 
   // Threshold
-  u8g2.drawStr(0, 38, "Threshold:");
-  char threshStr[10];
-  sprintf(threshStr, "%d", threshold);
-  u8g2.drawStr(60, 38, threshStr);
+  display.setCursor(0, 27);
+  display.print("Threshold:");
+  display.setCursor(60, 27);
+  display.print(threshold);
 
   // Status indicator
-  u8g2.drawStr(0, 51, "Status:");
+  display.setCursor(0, 39);
+  display.print("Status:");
+  display.setCursor(60, 39);
   if (alertActive) {
-    u8g2.drawStr(60, 51, "ALERT!");
+    display.print("ALERT!");
   } else if (sensorValue < threshold) {
-    u8g2.drawStr(60, 51, "Below");
+    display.print("Below");
   } else {
-    u8g2.drawStr(60, 51, "Normal");
+    display.print("Normal");
   }
 
   // Visual bar graph
   int barWidth = map(sensorValue, 0, 4095, 0, 128);
-  u8g2.drawFrame(0, 55, 128, 8);
-  u8g2.drawBox(0, 55, barWidth, 8);
+  display.drawRect(0, 52, 128, 11, SSD1306_WHITE);
+  display.fillRect(0, 52, barWidth, 11, SSD1306_WHITE);
 
-  u8g2.sendBuffer();
+  display.display();
 }
 
 void handleSerialCommand(char cmd) {
@@ -278,15 +290,18 @@ void handleCalibration() {
     Serial.println(calibrationReadings[calibrationIndex]);
 
     // Update display
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_ncenB08_tr);
-    u8g2.drawStr(0, 15, "CALIBRATING...");
-    char msg[20];
-    sprintf(msg, "Reading %d/10", calibrationIndex + 1);
-    u8g2.drawStr(0, 30, msg);
-    sprintf(msg, "Value: %d", calibrationReadings[calibrationIndex]);
-    u8g2.drawStr(0, 45, msg);
-    u8g2.sendBuffer();
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 10);
+    display.println("CALIBRATING...");
+    display.setCursor(0, 25);
+    display.print("Reading ");
+    display.print(calibrationIndex + 1);
+    display.print("/10");
+    display.setCursor(0, 40);
+    display.print("Value: ");
+    display.print(calibrationReadings[calibrationIndex]);
+    display.display();
 
     calibrationIndex++;
     delay(500);
