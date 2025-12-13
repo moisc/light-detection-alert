@@ -1,5 +1,5 @@
 # Libraries required (install via Arduino Library Manager or arduino-cli)
-# Example: arduino-cli lib install "LoRa"
+# For Light Detection Alert System
 
-LoRa
-# SPI is included in the core for ESP32
+Adafruit GFX Library
+Adafruit SSD1306
