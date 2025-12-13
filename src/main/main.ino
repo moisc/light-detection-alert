@@ -171,10 +171,33 @@ void connectWiFi() {
     Serial.println("\nWiFi connected!");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    // Show WiFi connected confirmation on OLED
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 10);
+    display.println("WiFi Connected!");
+    display.setCursor(0, 25);
+    display.println(WIFI_SSID);
+    display.setCursor(0, 40);
+    display.print("IP: ");
+    display.println(WiFi.localIP());
+    display.display();
+    delay(3000);  // Show for 3 seconds
   } else {
     wifiConnected = false;
     Serial.println("\nWiFi connection failed!");
     Serial.println("Notifications will not work without WiFi.");
+
+    // Show WiFi failed on OLED
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 15);
+    display.println("WiFi Failed!");
+    display.setCursor(0, 30);
+    display.println("Check credentials");
+    display.display();
+    delay(3000);  // Show for 3 seconds
   }
 }
 
