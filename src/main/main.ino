@@ -194,11 +194,41 @@ void triggerAlert() {
 }
 
 void sendDiscordNotification() {
+  // Check WiFi connection first
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected! Reconnecting...");
+    WiFi.disconnect();
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+      delay(500);
+      Serial.print(".");
+      attempts++;
+    }
+    Serial.println();
+
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("Failed to reconnect to WiFi. Cannot send notification.");
+      return;
+    }
+    Serial.println("WiFi reconnected!");
+  }
+
   HTTPClient http;
 
   Serial.println("Sending Discord notification...");
 
-  http.begin(DISCORD_WEBHOOK_URL);
+  // Use setConnectTimeout and setReuse for better reliability
+  http.setConnectTimeout(10000);  // 10 second timeout
+  http.setReuse(false);
+
+  if (!http.begin(DISCORD_WEBHOOK_URL)) {
+    Serial.println("Failed to begin HTTP connection");
+    http.end();
+    return;
+  }
+
   http.addHeader("Content-Type", "application/json");
 
   // Create Discord message
@@ -210,11 +240,15 @@ void sendDiscordNotification() {
   int httpResponseCode = http.POST(message);
 
   if (httpResponseCode > 0) {
-    Serial.print("Notification sent! Response: ");
+    Serial.print("✅ Notification sent! Response: ");
     Serial.println(httpResponseCode);
+    if (httpResponseCode == 204) {
+      Serial.println("Discord webhook successful!");
+    }
   } else {
-    Serial.print("Error sending notification: ");
+    Serial.print("❌ Error sending notification. Code: ");
     Serial.println(httpResponseCode);
+    Serial.println("Error codes: -1=connection refused, -11=timeout, -2=send failed");
   }
 
   http.end();
