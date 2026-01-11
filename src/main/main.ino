@@ -27,10 +27,10 @@
 #include "config.h"
 
 // Pin definitions
-#define SENSOR_PIN 36        // ADC1_0 for potentiometer/photoresistor
-#define OLED_SDA 4          // Heltec LoRa32 v2 OLED SDA
-#define OLED_SCL 15         // Heltec LoRa32 v2 OLED SCL
-#define OLED_RST 16         // Heltec LoRa32 v2 OLED Reset
+#define SENSOR_PIN 36  // ADC1_0 for potentiometer/photoresistor
+#define OLED_SDA 4     // Heltec LoRa32 v2 OLED SDA
+#define OLED_SCL 15    // Heltec LoRa32 v2 OLED SCL
+#define OLED_RST 16    // Heltec LoRa32 v2 OLED Reset
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
@@ -39,7 +39,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
 // Sensor and threshold settings
 int sensorValue = 0;
-int threshold = 2000;        // Default threshold (0-4095)
+int threshold = 2000;  // Default threshold (0-4095)
 bool alertActive = false;
 unsigned long lastAlertTime = 0;
 const unsigned long DEBOUNCE_TIME = 60000;  // 60 seconds between alerts
@@ -52,8 +52,19 @@ bool calibrationMode = false;
 int calibrationReadings[10];
 int calibrationIndex = 0;
 
+// Function declarations
+void connectWiFi();
+void triggerAlert();
+void sendDiscordNotification();
+void displayStatus();
+void handleSerialCommand(char cmd);
+void startCalibration();
+void handleCalibration();
+void setThresholdManual();
+void printStatus();
+
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600);
   delay(1000);
 
   Serial.println("\n\n=================================");
@@ -63,7 +74,7 @@ void setup() {
 
   // Initialize OLED
   Wire.begin(OLED_SDA, OLED_SCL);
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println("SSD1306 allocation failed");
   }
   display.clearDisplay();
@@ -76,7 +87,7 @@ void setup() {
   display.display();
 
   // Setup ADC for sensor reading
-  analogReadResolution(12);  // 12-bit resolution (0-4095)
+  analogReadResolution(12);        // 12-bit resolution (0-4095)
   analogSetAttenuation(ADC_11db);  // Full range
 
   // Connect to WiFi
@@ -88,8 +99,7 @@ void setup() {
   Serial.println("\nCommands:");
   Serial.println("  c/C - Calibrate threshold");
   Serial.println("  t/T - Set threshold manually");
-  Serial.println("  s/S - Show status");
-  Serial.println("  d/D - Toggle debug mode\n");
+  Serial.println("  s/S - Show status\n");
 
   Serial.println("Watching ADC readings on GPIO 36...");
   Serial.println("Turn potentiometer and watch values change\n");
@@ -134,16 +144,16 @@ void loop() {
     return;
   }
 
-  // Check threshold crossing
-  if (sensorValue < threshold && !alertActive) {
-    // Light level dropped below threshold (darker)
+  // Check threshold crossing (LIGHT INCREASE)
+  if (sensorValue > threshold && !alertActive) {
+    // Light level rose above threshold (brighter)
     if (millis() - lastAlertTime > DEBOUNCE_TIME) {
       triggerAlert();
       alertActive = true;
       lastAlertTime = millis();
     }
-  } else if (sensorValue >= threshold) {
-    // Light level back above threshold (brighter)
+  } else if (sensorValue <= threshold) {
+    // Light level went back down
     alertActive = false;
   }
 
@@ -255,21 +265,21 @@ void sendDiscordNotification() {
   http.addHeader("Content-Type", "application/json");
 
   // Create Discord message
-  String message = "{\"content\":\"🚨 **Light Alert Triggered!**\\n";
+  String message = "{\"content\":\"🔔 **Light Alert Triggered!**\\n";
   message += "Sensor reading: **" + String(sensorValue) + "** / 4095\\n";
   message += "Threshold: **" + String(threshold) + "**\\n";
-  message += "Status: Light level dropped below threshold (darker)\"}";
+  message += "Status: Light level rose above threshold (brighter)\"}";
 
   int httpResponseCode = http.POST(message);
 
   if (httpResponseCode > 0) {
-    Serial.print("✅ Notification sent! Response: ");
+    Serial.print("✓ Notification sent! Response: ");
     Serial.println(httpResponseCode);
     if (httpResponseCode == 204) {
       Serial.println("Discord webhook successful!");
     }
   } else {
-    Serial.print("❌ Error sending notification. Code: ");
+    Serial.print("✗ Error sending notification. Code: ");
     Serial.println(httpResponseCode);
     Serial.println("Error codes: -1=connection refused, -11=timeout, -2=send failed");
   }
